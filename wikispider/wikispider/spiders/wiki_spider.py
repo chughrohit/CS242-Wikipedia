@@ -14,7 +14,6 @@ class BloomDupeFilter():
                  mode=ScalableBloomFilter.SMALL_SET_GROWTH)
 
     def request_seen(self, url):
-        url = url.split("#")[0]
         if url in self.fingerprints:
             return True
         else:
