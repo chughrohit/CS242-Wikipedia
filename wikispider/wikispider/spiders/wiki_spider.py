@@ -44,7 +44,6 @@ class WikiSpider(scrapy.Spider):
             deny=[
                 r"https://en\.wikipedia\.org/wiki/Wikipedia.*",
                 r"https://en\.wikipedia\.org/wiki/Main_Page",
-                r"https://en\.wikipedia\.org/wiki/Free_Content",
                 r"https://en\.wikipedia\.org/wiki/Talk:.*",
                 r"https://en\.wikipedia\.org/wiki/Portal:.*",
                 r"https://en\.wikipedia\.org/wiki/Special:.*",
@@ -53,7 +52,8 @@ class WikiSpider(scrapy.Spider):
                 r"https://en\.wikipedia\.org/wiki/Template:.*",
                 r"https://en\.wikipedia\.org/wiki/Template_talk:.*",
                 r"https://en\.wikipedia\.org/wiki/Category_talk:.*",
-                r"https://en\.wikipedia\.org/wiki/File:.*"
+                r"https://en\.wikipedia\.org/wiki/File:.*",
+                r"https://en\.wikipedia\.org/w/.*"
             ],
             allow_domains=['en.wikipedia.org'],
             unique=True
@@ -108,7 +108,11 @@ class WikiSpider(scrapy.Spider):
         item['text'] = body
         item['url'] = response.url
         self.write_data(item)
-        #yield item
-        for url in urls:
-            yield response.follow(url, callback=self.parse)
+        for anchor in self.extractor.extract_links(response):
+            #checking for duplicates
+            if not self.dupfilter.request_seen(anchor.url):
+                if 'Category:' in anchor.url:
+                    yield response.follow(anchor, callback=self.parse)
+                else:
+                    yield response.follow(anchor, callback=self.parse_page)
 
