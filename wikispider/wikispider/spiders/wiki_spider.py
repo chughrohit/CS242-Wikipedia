@@ -34,7 +34,6 @@ class WikiSpider(scrapy.Spider):
     'https://en.wikipedia.org/wiki/Category:People',
     'https://en.wikipedia.org/wiki/Category:Education',
     'https://en.wikipedia.org/wiki/Category:Travel',
-    'https://en.wikipedia.org/wiki/Category:Medicine',
     'https://en.wikipedia.org/wiki/Category:Nutrition',
     'https://en.wikipedia.org/wiki/Category:Earth',
     'https://en.wikipedia.org/wiki/Category:Arts',
@@ -59,6 +58,7 @@ class WikiSpider(scrapy.Spider):
             allow_domains=['en.wikipedia.org'],
             unique=True
         )
+
     def __init__(self,**kwargs):
         self.filename = None
         self.data_path = os.path.join(os.getcwd(), r'data')
@@ -74,14 +74,16 @@ class WikiSpider(scrapy.Spider):
 
     def parse(self,response):
         for anchor in self.extractor.extract_links(response):
-            if 'Category:' in anchor.url:
-                yield response.follow(anchor, callback=self.parse)
-            else:
-                yield response.follow(anchor, callback=self.parse_page)
+            #checking for duplicates
+            if not self.dupfilter.request_seen(anchor.url):
+                if 'Category:' in anchor.url:
+                    yield response.follow(anchor, callback=self.parse)
+                else:
+                    yield response.follow(anchor, callback=self.parse_page)
 
     def write_data(self, data):
-        if self.count%20000 == 0:
-            self.filename = 'wiki-%s.json' % (self.count//20000)
+        if self.count%50000 == 0:
+            self.filename = 'wiki-%s.txt' % (self.count//50000)
         file_path = os.path.join(self.data_path,self.filename)
         with open(file_path, 'a') as output_file:
             json.dump(data, output_file)
@@ -106,12 +108,7 @@ class WikiSpider(scrapy.Spider):
         item['text'] = body
         item['url'] = response.url
         self.write_data(item)
-
-        #checking for duplicates
+        #yield item
         for url in urls:
-            parsed_uri = urlparse(response.urljoin(url))
-            result = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-            if "https://en.wikipedia.org" in result:
-                if not self.dupfilter.request_seen(response.urljoin(url)):
-                    yield response.follow(url, callback=self.parse)
+            yield response.follow(url, callback=self.parse)
 
