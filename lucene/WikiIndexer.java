@@ -35,6 +35,11 @@ public class WikiIndexer {
 
     public static void main(String[] args) throws IOException, ParseException {
 
+        //Inpur args error handling
+        if (args.length == 0) {
+            System.out.println("Proper Usage is: java WikiIndexer \"{Index\\Destination}\" \"{Data\\dump\\destination}\"  ");
+            System.exit(0);
+        }
 
         //Param: Where Lucene index is to be stored
         String index_path = args[0];
@@ -78,7 +83,7 @@ public class WikiIndexer {
                     if (documentCounter % 10000 == 0) {
 
                         finish = Instant.now();
-                        System.out.println(documentCounter + " documents processed in" + Duration.between(start, finish).toMillis() / 1000 + " seconds");
+                        System.out.println(documentCounter + " documents processed in" + Duration.between(start, finish).toMillis() / 1000 + "  seconds");
                     }
 
                     //Read the JSON object present in current line
