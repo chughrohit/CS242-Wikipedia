@@ -1,7 +1,3 @@
-import java.io.IOException;
-
-import java.nio.file.Paths;
-import java.io.*;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -23,10 +19,15 @@ import org.apache.lucene.store.FSDirectory;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import java.io.FileReader;
-import java.util.Iterator;
 import org.json.simple.parser.*;
+
+import java.io.FileReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.io.*;
+
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.time.*;
 
@@ -35,113 +36,86 @@ public class WikiIndexer {
     public static void main(String[] args) throws IOException, ParseException {
 
 
+        //Param: Where Lucene index is to be stored
+        String index_path = args[0];
+        //String index_path = "D:\\Anish\\MS\\QTR2\\IR\\lucene\\indices\\wiki_index";
 
-        String index_path = "D:\\Anish\\MS\\QTR2\\IR\\lucene\\indices\\wiki_index";
+        //Param: Where the dataset is located on local drive
+        File directory = new File(args[1]);
+        //File directory = new File("D:\\Anish\\MS\\QTR2\\IR\\data_lat\\data");
+
+        // Load the index directory
         Directory dir =  FSDirectory.open(Paths.get(index_path));
+
+        // Initialize a standard Analyer
         Analyzer analyzer =  new StandardAnalyzer();
+
+        //Indexwriter setup code
         IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         IndexWriter writer = new IndexWriter(dir, iwc);
 
-        //Starting point for timer
+        //Time logging objects
         Instant start = Instant.now();
         Instant finish;
+
+
         //JSON parser object to parse read file
         JSONParser jsonParser = new JSONParser();
 
-        File directory = new File("D:\\Anish\\MS\\QTR2\\IR\\data_lat\\data");
+
 
         for (File file : directory.listFiles()) {
 
-            System.out.println(file.getName());
+            System.out.println("Processing " + file.getName() + "...");
 
-            int insertCounter = 0;
+            int documentCounter = 0;
             try (BufferedReader reader = new BufferedReader (new FileReader(file))) {
+
                 String line = reader.readLine();
                 while (line != null) {
-                    insertCounter++;
-                    if(insertCounter%10000==0){
+
+                    documentCounter++;
+                    if (documentCounter % 10000 == 0) {
 
                         finish = Instant.now();
- 
-                        System.out.println("Number of documents: "+insertCounter+" "+Duration.between(start, finish).toMillis());
-                    } 
+                        System.out.println(documentCounter + " documents processed in" + Duration.between(start, finish).toMillis() / 1000 + " seconds");
+                    }
 
-                    //Read JSON file
+                    //Read the JSON object present in current line
                     JSONObject obj = (JSONObject) jsonParser.parse(line);
-        
 
-                    //JSONArray employeeList = (JSONArray) obj;
-                    //System.out.println(employeeList);
-
+                    //Pass the JSON object to be indexed in Lucene
                     parseObject(obj , writer );
 
-                    // try{
-                    // //Iterate over employee array
-                    // employeeList.forEach( emp -> parseObject( (JSONObject) emp,writer ) );
-
-
-                    // }
+                    //Read the next line in the files
                     line =  reader.readLine();
 
                 }
             } catch (Exception e) {}
 
-            // }
-
-            // catch (Exception e) {
-            //     e.printStackTrace();
-            //     System.out.println(e + "");
-            // }
-
         }
-
-
-
-
 
         writer.close();
 
-        // } catch (FileNotFoundException e) {
-        //     e.printStackTrace();
-
-        //catch (ParseException e) {
-        //     e.printStackTrace();
-        // }
-
-        // Document doc = new Document();
-
-        // doc.add(new TextField("title","Dark Knight Rises", Field.Store.YES));
-        // doc.add(new TextField("director","C. Nolan", Field.Store.YES));
-        //writer.addDocument(doc);
     }
-
-
-
-
 
     public static void parseObject(JSONObject obj, IndexWriter writer) {
 
-//System.out.println(obj.get("title"));
+
 
         try {
+
             Document doc = new Document();
             doc.add(new TextField("title", obj.get("title").toString(), Field.Store.YES));
             doc.add(new TextField("text", obj.get("text").toString(), Field.Store.NO));
             doc.add(new TextField("url", obj.get("url").toString(), Field.Store.YES));
 
-            //System.out.println(obj.get("title")+ "| "+obj.get("url"));
+
             writer.addDocument(doc);
-        } catch (Exception e) {}
 
+        } catch (Exception e) {
 
-
-    }
-
-    public static void insertDocument(IndexWriter idx) {
-
-        Document doc = new Document();
-        //doc.add(new TextField(field,content, Field.Store.YES));
-
+        }
     }
 
 }
