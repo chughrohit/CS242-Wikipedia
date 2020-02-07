@@ -141,6 +141,7 @@ class WikiSpider(scrapy.Spider):
         page_content = response.css('#mw-content-text p::text').getall()
         body = self.strip_data(''.join(page_content))
         item['text'] = body
+        item['categories'] = response.xpath('//*[@id="mw-normal-catlinks"]/ul/li/a/text()').getall()
         item['url'] = response.url
         self.write_data(item)
         for anchor in self.extractor.extract_links(response):
