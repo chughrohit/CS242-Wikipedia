@@ -31,6 +31,8 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.time.*;
 
+import java.util.Iterator;
+
 public class WikiIndexer {
 
     public static void main(String[] args) throws IOException, ParseException {
@@ -115,7 +117,13 @@ public class WikiIndexer {
             doc.add(new TextField("text", obj.get("text").toString(), Field.Store.NO));
             doc.add(new TextField("url", obj.get("url").toString(), Field.Store.YES));
 
+            JSONArray categories = (JSONArray) obj.get("categories");
+            Iterator<String> iterator = categories.iterator();
+            while (iterator.hasNext()) {
+                doc.add(new TextField("categories", iterator.next().toString(), Field.Store.YES));
+            }
 
+        
             writer.addDocument(doc);
 
         } catch (Exception e) {
